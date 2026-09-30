@@ -1,0 +1,9 @@
+schema_version: '3.4.0'
+capability:
+  id: abap_cds_capability
+  name: ABAP & CDS AI Debug Tools Capability
+  description: Connects Joule Agent to ABAP & CDS AI Debugger REST API endpoints.
+  type: openapi
+  specPath: ./openapi.json
+  destination: ABAP_AI_AGENT_API
+  scenariosPath: ./scenarios/

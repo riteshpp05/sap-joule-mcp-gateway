@@ -1,0 +1,10 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+scratch/
+cf-cli/
+*.zip
+cf8.exe
+*.log

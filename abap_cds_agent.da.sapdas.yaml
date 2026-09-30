@@ -1,0 +1,7 @@
+schema_version: '1.0.0'
+name: abap_cds_debug_agent
+capabilities:
+  - name: abap_cds_capability
+    namespace: joule.ext
+    version: 1.0.0
+    type: local

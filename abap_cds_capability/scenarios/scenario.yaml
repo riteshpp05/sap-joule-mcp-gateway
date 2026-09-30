@@ -1,0 +1,8 @@
+schema_version: '3.4.0'
+scenario:
+  id: abap_cds_debug_scenario
+  name: ABAP CDS Debug Scenario
+  description: Scenario test for ABAP and CDS AI Debugger capability
+  utterances:
+    - "Analyze ST22 dump"
+    - "Create CDS view"

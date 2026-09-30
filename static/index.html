@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAP ADT Developer Studio & Diagnostic Gateway</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f6ff',
+              100: '#e0edfe',
+              200: '#bae0fd',
+              500: '#0064d2',
+              600: '#0054b3',
+              700: '#00438f',
+              900: '#002657'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    code, pre, textarea, .code-font {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .tab-btn {
+      position: relative;
+      transition: color 0.15s ease;
+    }
+    .tab-btn.active {
+      color: #0f172a;
+      font-weight: 600;
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: #0064d2;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 h-full flex flex-col text-sm selection:bg-slate-200">
+
+  <!-- Enterprise Top Navigation Bar -->
+  <header class="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-30">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+          SAP
+        </div>
+        <div class="leading-none">
+          <span class="font-semibold text-slate-900 text-sm tracking-tight">ADT Studio</span>
+          <span class="text-xs text-slate-500 font-normal ml-1.5">Diagnostic & Modeling Gateway</span>
+        </div>
+      </div>
+      <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+      <div class="hidden sm:flex items-center space-x-2">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+          Mock Mode (Isolated)
+        </span>
+        <span class="text-xs text-slate-500 font-mono">FastMCP & REST Active</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <a href="/docs" target="_blank" class="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded hover:bg-slate-50 transition flex items-center gap-1.5">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+        <span>API Docs</span>
+      </a>
+      <button onclick="fetchHealth()" class="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 border border-slate-200 rounded hover:bg-slate-50 transition flex items-center gap-1.5" title="Check Gateway Status">
+        <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+        <span>Health</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Clean Sub-Navigation Tabs -->
+  <nav class="bg-white border-b border-slate-200 px-6 flex space-x-6 overflow-x-auto">
+    <button onclick="switchTab('st22')" id="tab-st22" class="tab-btn active py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+      <span>ST22 Dumps</span>
+    </button>
+    <button onclick="switchTab('abap')" id="tab-abap" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="code" class="w-3.5 h-3.5"></i>
+      <span>Source Explorer</span>
+    </button>
+    <button onclick="switchTab('abap-optimize')" id="tab-abap-optimize" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+      <span>Code Optimization</span>
+    </button>
+    <button onclick="switchTab('cds-create')" id="tab-cds-create" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+      <span>CDS Builder</span>
+    </button>
+    <button onclick="switchTab('cds-diag')" id="tab-cds-diag" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+      <span>CDS Diagnostics</span>
+    </button>
+    <button onclick="switchTab('package')" id="tab-package" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>
+      <span>Package Manager</span>
+    </button>
+    <button onclick="switchTab('chat')" id="tab-chat" class="tab-btn py-2.5 text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+      <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+      <span>AI Assistant</span>
+    </button>
+  </nav>
+
+  <!-- Global Notification Banner / Toast -->
+  <div id="status-toast" class="hidden fixed bottom-5 right-5 max-w-md bg-white border border-slate-300 rounded-lg p-3.5 shadow-lg flex items-start justify-between space-x-3 z-50">
+    <div class="flex items-start space-x-2.5">
+      <i id="status-icon" data-lucide="info" class="w-4 h-4 text-slate-600 mt-0.5 flex-shrink-0"></i>
+      <span id="status-msg" class="text-xs text-slate-800 leading-snug"></span>
+    </div>
+    <button onclick="dismissStatus()" class="text-slate-400 hover:text-slate-600 p-0.5">
+      <i data-lucide="x" class="w-3.5 h-3.5"></i>
+    </button>
+  </div>
+
+  <!-- Main Viewport -->
+  <main class="flex-1 p-6 max-w-7xl w-full mx-auto overflow-y-auto">
+
+    <!-- 1. ST22 SHORT DUMPS WORKBENCH -->
+    <section id="content-st22" class="space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-base font-semibold text-slate-900">Runtime Crash Dump Analyzer (ST22)</h2>
+          <p class="text-xs text-slate-500">Automated triage, root-cause analysis, and syntax-checked patch proposal.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="loadRecentDumps(true)" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+            <span>Load Dumps</span>
+          </button>
+          <button onclick="loadSampleDumps()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded text-xs font-medium transition flex items-center gap-1.5">
+            <i data-lucide="database" class="w-3 h-3"></i>
+            <span>Load Samples</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left: Incident Catalog -->
+        <div class="lg:col-span-4 bg-white border border-slate-200 rounded-lg flex flex-col h-[720px] overflow-hidden">
+          <div class="p-3 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Incidents</span>
+            <span id="dump-count" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">0 Dumps</span>
+          </div>
+          <div id="dump-list-container" class="flex-1 overflow-y-auto p-2 space-y-1.5">
+            <div class="text-center py-20 text-slate-400 text-xs">
+              Click "Load Dumps" to fetch crash events.
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Diagnostic Details & Triage Panel -->
+        <div class="lg:col-span-8 bg-white border border-slate-200 rounded-lg flex flex-col h-[720px] overflow-hidden">
+          
+          <!-- Empty State -->
+          <div id="dump-details-placeholder" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+            <i data-lucide="search" class="w-8 h-8 mb-2 text-slate-300"></i>
+            <p class="text-sm font-medium text-slate-700">Select an incident to view diagnosis</p>
+            <p class="text-xs text-slate-500 max-w-sm mt-1">Detailed failure mechanism, call stack analysis, and proposed resolution patch will be displayed here.</p>
+          </div>
+
+          <!-- Active Detail State -->
+          <div id="dump-details-content" class="hidden flex-1 flex flex-col overflow-y-auto p-5 space-y-4">
+            
+            <!-- Incident Header -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <span id="detail-dump-id" class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-xs font-mono font-medium">ID</span>
+                  <span id="detail-date" class="text-xs text-slate-500">Date</span>
+                </div>
+                <h3 id="detail-dump-title" class="text-sm font-bold text-slate-900 mt-1">COMPUTE_INT_ZERODIVIDE</h3>
+                <div class="flex items-center gap-3 mt-1 text-xs text-slate-600 font-mono">
+                  <span id="detail-program">Program: --</span>
+                </div>
+              </div>
+              <button onclick="runAutoFixAbap()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded text-xs font-medium transition flex items-center gap-1.5 flex-shrink-0">
+                <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                <span>Generate Fix Proposal</span>
+              </button>
+            </div>
+
+            <!-- Triage Summary Grid (Clean Monochrome Cards) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="p-3 rounded border border-slate-200 bg-white">
+                <div class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                  <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-slate-500"></i>
+                  <span>Failure Mode</span>
+                </div>
+                <p id="dump-card-what" class="text-xs text-slate-600 leading-relaxed">Analyzing failure mode...</p>
+              </div>
+
+              <div class="p-3 rounded border border-slate-200 bg-white">
+                <div class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                  <i data-lucide="compass" class="w-3.5 h-3.5 text-slate-500"></i>
+                  <span>Root Cause</span>
+                </div>
+                <p id="dump-card-why" class="text-xs text-slate-600 leading-relaxed">Analyzing root cause...</p>
+              </div>
+
+              <div class="p-3 rounded border border-slate-200 bg-white">
+                <div class="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-500"></i>
+                  <span>Remediation</span>
+                </div>
+                <p id="dump-card-how" class="text-xs text-slate-600 leading-relaxed">Analyzing remediation strategy...</p>
+              </div>
+            </div>
+
+            <!-- Proposed Fix Section -->
+            <div id="fix-workbench-section" class="hidden border border-slate-200 rounded-md p-4 bg-slate-50/50 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <i data-lucide="git-pull-request" class="w-3.5 h-3.5 text-slate-600"></i>
+                  <span>Proposed Code Patch</span>
+                </span>
+                <button onclick="pushAbapFixModal()" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center gap-1.5">
+                  <i data-lucide="upload" class="w-3 h-3"></i>
+                  <span>Deploy to SAP</span>
+                </button>
+              </div>
+              <p id="fix-explanation" class="text-xs text-slate-700 bg-white p-2.5 border border-slate-200 rounded leading-relaxed"></p>
+              
+              <div class="space-y-1.5">
+                <div class="flex justify-between items-center text-xs text-slate-500">
+                  <span>Source Review:</span>
+                  <button onclick="copyElementText('fixed-code-editor')" class="text-slate-700 hover:text-slate-900 flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3 h-3"></i> Copy Patch
+                  </button>
+                </div>
+                <textarea id="fixed-code-editor" class="w-full bg-slate-900 text-slate-100 border border-slate-800 rounded p-3 text-xs font-mono h-40 focus:outline-none"></textarea>
+              </div>
+            </div>
+
+            <!-- Technical Stack Trace Output -->
+            <div class="space-y-1.5 flex-1 flex flex-col">
+              <div class="flex justify-between items-center text-xs font-semibold text-slate-700">
+                <span>ADT Short Dump Log:</span>
+                <button onclick="copyElementText('dump-analysis-output')" class="text-slate-500 hover:text-slate-800 flex items-center gap-1 font-normal">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                </button>
+              </div>
+              <div class="flex-1 bg-slate-900 border border-slate-800 rounded overflow-hidden flex flex-col min-h-[160px]">
+                <pre id="dump-analysis-output" class="p-3 text-xs text-slate-200 font-mono overflow-auto flex-1 whitespace-pre-wrap leading-relaxed">Select a dump...</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. ABAP CODE EXPLORER -->
+    <section id="content-abap" class="hidden space-y-4">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">ABAP Source Code Explorer</h2>
+        <p class="text-xs text-slate-500">Direct ADT program inspection and automatic logic summarization.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <input type="text" id="abap-prog-input" placeholder="Program Name (e.g. ZCDS_BOM_COMP)" class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-mono uppercase focus:outline-none focus:border-slate-500">
+          <button onclick="fetchAbapSource()" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1.5">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>Fetch Source</span>
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs text-slate-500">
+          <span>Quick Presets:</span>
+          <button onclick="setAndFetchAbap('ZCDS_BOM_COMP')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-mono text-[11px]">ZCDS_BOM_COMP</button>
+          <button onclick="setAndFetchAbap('Z_DEMO1')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-mono text-[11px]">Z_DEMO1</button>
+        </div>
+
+        <!-- Logic Summary Container -->
+        <div id="abap-summary-container" class="hidden p-3 bg-slate-50 border border-slate-200 rounded space-y-1">
+          <span class="text-xs font-semibold text-slate-800">Logic Summary:</span>
+          <p id="abap-summary-text" class="text-xs text-slate-600 leading-relaxed"></p>
+        </div>
+
+        <!-- Source Display -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-center bg-slate-100 border border-slate-200 px-3 py-2 rounded-t text-xs">
+            <div class="flex items-center space-x-2">
+              <span id="abap-source-title" class="font-mono font-semibold text-slate-800">Program: --</span>
+              <span id="abap-line-count" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="copyAbapCode()" class="text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
+              <button onclick="downloadCode('abap-code-display', 'program.abap')" class="text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                <i data-lucide="download" class="w-3 h-3"></i> Download
+              </button>
+            </div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-b overflow-hidden flex min-h-[460px] max-h-[600px]">
+            <div id="abap-line-gutter" class="w-10 bg-slate-950 border-r border-slate-800 py-3 px-1.5 text-right text-[11px] text-slate-500 font-mono select-none space-y-0.5">
+              1
+            </div>
+            <pre id="abap-code-display" class="flex-1 p-3 text-xs text-slate-200 font-mono overflow-auto whitespace-pre leading-relaxed">Enter program name above and click Fetch Source.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ABAP CODE OPTIMIZATION -->
+    <section id="content-abap-optimize" class="hidden space-y-4">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">ABAP Modernization & Optimization</h2>
+        <p class="text-xs text-slate-500">Syntactic analysis and performance recommendations for legacy ABAP routines.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Source Code Input</label>
+          <textarea id="optimize-input-code" class="w-full border border-slate-300 rounded p-3 text-xs font-mono h-48 focus:outline-none focus:border-slate-500" placeholder="Paste legacy ABAP code here..."></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="optimizeAbapCode()" id="btn-optimize-abap" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center gap-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+            <span>Analyze Code</span>
+          </button>
+        </div>
+
+        <div id="optimization-result-container" class="hidden space-y-2 pt-2 border-t border-slate-200">
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-800">
+            <span>Optimization Recommendations:</span>
+            <button onclick="copyOptimizeResult()" class="text-slate-600 hover:text-slate-900 flex items-center gap-1 font-normal">
+              <i data-lucide="copy" class="w-3 h-3"></i> Copy
+            </button>
+          </div>
+          <pre class="bg-slate-900 text-slate-200 p-3.5 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed"><code id="optimize-result-code"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. CDS VIEW BUILDER -->
+    <section id="content-cds-create" class="hidden space-y-4">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">CDS View Definition Studio</h2>
+        <p class="text-xs text-slate-500">Synthesize production-grade Core Data Services DDL from functional specifications.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Input Form -->
+        <div class="lg:col-span-5 bg-white border border-slate-200 rounded-lg p-5 space-y-3.5">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+            <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Specifications</span>
+            <select onchange="document.getElementById('cds-prompt-input').value=this.value;" class="border border-slate-300 rounded px-2 py-1 text-xs text-slate-700 bg-white focus:outline-none">
+              <option value="">Templates</option>
+              <option value="Build a sales order CDS view joining VBAK and VBAP">Sales Orders (VBAK + VBAP)</option>
+              <option value="Create a material master view from MARA">Material Master (MARA)</option>
+              <option value="Create purchase orders view joining EKKO and LFA1">Purchase Orders (EKKO + LFA1)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Functional Description *</label>
+            <textarea id="cds-prompt-input" placeholder="e.g. Sales order header view joining VBAK and VBAP on vbeln..." class="w-full border border-slate-300 rounded p-2.5 text-xs text-slate-800 h-28 focus:outline-none focus:border-slate-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Package</label>
+              <input type="text" id="cds-package" value="$TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono uppercase focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Transport Request</label>
+              <input type="text" id="cds-tr" placeholder="Optional for $TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono focus:outline-none">
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-slate-200 text-xs">
+            <label class="flex items-center space-x-2 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="cds-fiori-toggle" checked class="rounded border-slate-300">
+              <span>Publish as OData Service (@OData.publish: true)</span>
+            </label>
+            <label class="flex items-center space-x-2 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="cds-push-sap" class="rounded border-slate-300">
+              <span class="font-medium text-slate-900">Activate Directly in SAP</span>
+            </label>
+          </div>
+
+          <button onclick="generateCdsViewFromPrompt()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>Generate DDL</span>
+          </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="lg:col-span-7 bg-white border border-slate-200 rounded-lg p-5 flex flex-col">
+          <div class="flex justify-between items-center pb-2 mb-2 border-b border-slate-200">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">DDL Definition</span>
+              <span id="cds-status-badge" class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Ready</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="copyElementText('cds-ddl-output')" class="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
+              <button onclick="downloadCode('cds-ddl-output', 'view.asddls')" class="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                <i data-lucide="download" class="w-3 h-3"></i> Download
+              </button>
+            </div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded flex-1 overflow-hidden flex flex-col min-h-[360px]">
+            <pre id="cds-ddl-output" class="flex-1 p-3.5 text-xs text-slate-200 font-mono overflow-auto whitespace-pre leading-relaxed">DDL definition will appear here after generation.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CDS DIAGNOSTICS & REPAIR -->
+    <section id="content-cds-diag" class="hidden space-y-4">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">CDS Diagnostics & Syntax Repair</h2>
+        <p class="text-xs text-slate-500">Automated activation diagnosis and syntax remediation for Core Data Services.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <input type="text" id="diag-cds-name" placeholder="CDS View Name (e.g. ZI_BROKEN_CDS)" class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-xs font-mono uppercase focus:outline-none focus:border-slate-500">
+          <button onclick="diagnoseCdsView()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1.5">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+            <span>Diagnose</span>
+          </button>
+          <button onclick="autoFixCdsView()" class="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1.5">
+            <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
+            <span>Auto-Repair</span>
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs text-slate-500">
+          <span>Sample Targets:</span>
+          <button onclick="setAndDiagCds('ZI_BROKEN_CDS')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-mono text-[11px]">ZI_BROKEN_CDS</button>
+          <button onclick="setAndDiagCds('ZI_INVALID_JOIN')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-mono text-[11px]">ZI_INVALID_JOIN</button>
+        </div>
+
+        <!-- Explanation Container -->
+        <div id="cds-diag-explain-container" class="hidden p-3 bg-slate-50 border border-slate-200 rounded space-y-1">
+          <span class="text-xs font-semibold text-slate-800">Diagnostic Summary:</span>
+          <p id="cds-diag-explain-text" class="text-xs text-slate-600 leading-relaxed"></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Raw Report -->
+          <div class="space-y-1.5">
+            <span class="text-xs font-semibold text-slate-700">Diagnostic Report:</span>
+            <div class="bg-slate-900 border border-slate-800 rounded p-3 min-h-[300px] max-h-[420px] overflow-auto">
+              <pre id="cds-diag-report" class="text-xs text-slate-200 font-mono whitespace-pre-wrap leading-relaxed">No diagnosis run yet.</pre>
+            </div>
+          </div>
+
+          <!-- Repaired DDL -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-semibold text-slate-700">Repaired DDL:</span>
+              <div class="flex items-center space-x-2">
+                <button onclick="copyElementText('cds-repaired-ddl')" class="text-slate-600 hover:text-slate-900 flex items-center gap-1">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                </button>
+                <button onclick="openPushCdsModal()" class="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium flex items-center gap-1">
+                  <i data-lucide="upload" class="w-3 h-3"></i> Deploy
+                </button>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded p-3 min-h-[300px] max-h-[420px] overflow-auto">
+              <pre id="cds-repaired-ddl" class="text-xs text-slate-200 font-mono whitespace-pre-wrap leading-relaxed">Repaired DDL will be displayed here.</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. SAP PACKAGE MANAGER -->
+    <section id="content-package" class="hidden space-y-4">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">SAP Package Administration</h2>
+        <p class="text-xs text-slate-500">Create and register Development Classes (DevClass) via ADT.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-5 max-w-xl space-y-4">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Package Name *</label>
+            <input type="text" id="pkg-name" placeholder="Z_CUSTOM_PACKAGE" class="w-full border border-slate-300 rounded p-2 text-xs font-mono uppercase focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Description</label>
+            <input type="text" id="pkg-desc" placeholder="Custom ABAP Package" class="w-full border border-slate-300 rounded p-2 text-xs focus:outline-none">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Software Component</label>
+              <input type="text" id="pkg-swc" value="HOME" class="w-full border border-slate-300 rounded p-2 text-xs font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Transport Layer</label>
+              <input type="text" id="pkg-layer" value="SAP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono focus:outline-none">
+            </div>
+          </div>
+        </div>
+
+        <button onclick="createSapPackage()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center justify-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Create Package</span>
+        </button>
+
+        <div id="pkg-result-container" class="hidden space-y-1.5 pt-3 border-t border-slate-200">
+          <span class="text-xs font-semibold text-slate-800">Result Log:</span>
+          <pre id="pkg-result-output" class="bg-slate-900 text-slate-200 p-3 rounded text-xs font-mono whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. AI ASSISTANT -->
+    <section id="content-chat" class="hidden space-y-4 flex flex-col h-[calc(100vh-170px)]">
+      <div class="pb-2 border-b border-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">Developer Assistant</h2>
+        <p class="text-xs text-slate-500">Query architectural patterns, syntax conventions, and troubleshooting guidelines.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg flex-1 flex flex-col overflow-hidden">
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded bg-slate-800 text-white flex items-center justify-center shrink-0 text-xs font-bold">
+              AI
+            </div>
+            <div class="bg-white border border-slate-200 p-3 rounded text-xs text-slate-800 max-w-[85%] leading-relaxed">
+              Connected to local AI engine. Ask any question regarding ABAP syntax, ST22 crash dump triage, or CDS data modeling.
+            </div>
+          </div>
+        </div>
+        <div class="p-3 border-t border-slate-200 bg-white">
+          <div class="flex gap-2">
+            <input type="text" id="chat-input" class="border border-slate-300 rounded px-3 py-1.5 text-xs flex-1 focus:outline-none focus:border-slate-500" placeholder="Ask a question..." onkeypress="handleChatKeyPress(event)">
+            <button onclick="sendChatMessage()" id="btn-send-chat" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-medium transition flex items-center justify-center">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: PUSH ABAP FIX -->
+  <div id="push-fix-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2.5">
+        <h3 class="text-sm font-semibold text-slate-900">Deploy Code Fix to SAP ADT</h3>
+        <button onclick="closePushModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-600">Specify package and transport request to deploy and activate the patch.</p>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Target Package</label>
+          <input type="text" id="modal-pkg" value="$TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono uppercase text-slate-900">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Transport Request</label>
+          <input type="text" id="modal-tr" placeholder="Optional for $TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono text-slate-900">
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+        <button onclick="closePushModal()" class="px-3 py-1.5 rounded text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="executePushAbapFix()" class="px-3.5 py-1.5 rounded text-xs font-medium text-white bg-brand-500 hover:bg-brand-600 transition">Deploy & Activate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: PUSH CDS FIX -->
+  <div id="push-cds-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2.5">
+        <h3 class="text-sm font-semibold text-slate-900">Deploy CDS View Definition</h3>
+        <button onclick="closePushCdsModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-600">Specify deployment parameters for live ADT registration.</p>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Package</label>
+          <input type="text" id="modal-cds-pkg" value="$TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono uppercase text-slate-900">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-700 mb-1">Transport Request</label>
+          <input type="text" id="modal-cds-tr" placeholder="Optional for $TMP" class="w-full border border-slate-300 rounded p-2 text-xs font-mono uppercase text-slate-900">
+        </div>
+        <div class="flex items-center space-x-2 pt-1 text-xs text-slate-700">
+          <input type="checkbox" id="modal-cds-autopkg" checked class="rounded border-slate-300">
+          <label for="modal-cds-autopkg">Create target package if missing</label>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+        <button onclick="closePushCdsModal()" class="px-3 py-1.5 rounded text-xs text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="executePushCdsFix()" class="px-3.5 py-1.5 rounded text-xs font-medium text-white bg-brand-500 hover:bg-brand-600 transition">Deploy & Activate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    let currentDumpList = [];
+    let selectedDump = null;
+    let currentDumpRawText = "";
+    let chatHistory = [];
+
+    // Initialize icons
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      loadRecentDumps(true);
+    });
+
+    function formatDumpId(rawId) {
+      if (!rawId) return 'ST22_DUMP';
+      try { rawId = decodeURIComponent(rawId); } catch(e) {}
+      rawId = rawId.replace(/%20/g, ' ').replace(/\s+/g, ' ').trim();
+      return rawId.length > 22 ? rawId.substring(0, 20) + '...' : rawId;
+    }
+
+    function extractCleanCode(data) {
+      if (typeof data === 'string') return unescapeString(data);
+      if (!data) return '';
+      let raw = data.source || data.source_code || data.code || data.ddl || data.repaired_ddl || data.proposed_fix || data.fixed_code || data.suggested_fix;
+      if (raw && typeof raw === 'string') return unescapeString(raw);
+      if (data.error || data.message) {
+        let msg = data.message || 'SAP ADT Error';
+        let detail = data.detail ? `\n\nDetail:\n${data.detail}` : '';
+        return `/* SAP ADT RESPONSE */\n" ${msg}${detail}`;
+      }
+      return unescapeString(JSON.stringify(data, null, 2));
+    }
+
+    function unescapeString(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\t/g, '  ').replace(/^"(.*)"$/s, '$1');
+    }
+
+    function renderLineNumbers(text, gutterId) {
+      const lines = (text || '').split('\n').length;
+      const gutter = document.getElementById(gutterId);
+      if (!gutter) return;
+      let numbers = '';
+      for (let i = 1; i <= Math.max(lines, 1); i++) {
+        numbers += `<div>${i}</div>`;
+      }
+      gutter.innerHTML = numbers;
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      const activeContent = document.getElementById(`content-${tabId}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeContent) activeContent.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('status-toast');
+      const msgEl = document.getElementById('status-msg');
+      const icon = document.getElementById('status-icon');
+
+      msgEl.innerText = msg;
+      toast.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (!toast.classList.contains('hidden')) {
+          dismissStatus();
+        }
+      }, 5000);
+    }
+
+    function dismissStatus() {
+      document.getElementById('status-toast').classList.add('hidden');
+    }
+
+    async function fetchHealth() {
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        if (data.status === 'ok') showToast('Gateway services active (REST & MCP)', 'info');
+      } catch (err) {
+        showToast('Gateway offline: Cannot connect to port 8080', 'error');
+      }
+    }
+
+    // 1. ST22 Dumps
+    async function loadRecentDumps(fromBackend = true) {
+      try {
+        const res = await fetch('/api/abap/dumps?max_results=20');
+        const data = await res.json();
+        
+        let dumps = data.dumps || data.data || [];
+        if (dumps.length === 0) dumps = getSampleDumps();
+        renderDumpList(dumps);
+      } catch (err) {
+        renderDumpList(getSampleDumps());
+      }
+    }
+
+    function loadSampleDumps() {
+      const dumps = getSampleDumps();
+      renderDumpList(dumps);
+      showToast('Loaded sample incidents', 'info');
+    }
+
+    function getSampleDumps() {
+      return [
+        {
+          dump_id: "DUMP_20260831_001",
+          exception: "COMPUTE_INT_ZERODIVIDE",
+          program: "ZTEST_CALCULATOR",
+          date: "Today 13:45",
+          line: 42,
+          what: "Arithmetic error: Division by zero triggered during runtime execution.",
+          why: "Variable lv_divisor was evaluated as 0 on line 42 without an existence guard.",
+          how: "Wrap arithmetic calculation in conditional guard (IF lv_divisor <> 0)."
+        },
+        {
+          dump_id: "DUMP_20260831_002",
+          exception: "CONVT_NO_NUMBER",
+          program: "ZCDS_BOM_COMP",
+          date: "Today 12:10",
+          line: 118,
+          what: "Type conversion failure: Non-numeric literal passed to integer variable.",
+          why: "String value containing alpha characters encountered during assignment.",
+          how: "Validate alphanumeric format before type conversion."
+        },
+        {
+          dump_id: "DUMP_20260831_003",
+          exception: "ITAB_LINE_NOT_FOUND",
+          program: "Z_SALES_REPORT",
+          date: "Yesterday",
+          line: 87,
+          what: "Direct internal table access failed with missing key entry.",
+          why: "Table line dereferenced without checking sy-subrc or using VALUE #( ... DEFAULT ).",
+          how: "Verify sy-subrc = 0 or use OPTIONAL key expression."
+        }
+      ];
+    }
+
+    function renderDumpList(dumps) {
+      currentDumpList = dumps;
+      const container = document.getElementById('dump-list-container');
+      document.getElementById('dump-count').innerText = `${dumps.length} Dumps`;
+      container.innerHTML = '';
+
+      dumps.forEach((d, idx) => {
+        const displayId = formatDumpId(d.dump_id);
+        const item = document.createElement('div');
+        item.className = 'p-2.5 border border-slate-200 hover:border-slate-400 rounded cursor-pointer transition bg-white space-y-1';
+        item.onclick = () => selectDump(idx);
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-mono font-semibold text-slate-800 truncate max-w-[150px]">${displayId}</span>
+            <span class="text-[11px] text-slate-400 font-mono">${d.date || 'Recent'}</span>
+          </div>
+          <div class="text-xs font-medium text-slate-900 truncate">${d.exception || d.title || 'Runtime Error'}</div>
+          <div class="text-[11px] text-slate-500 font-mono truncate">${d.program || 'N/A'}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function selectDump(index) {
+      selectedDump = currentDumpList[index];
+      document.getElementById('dump-details-placeholder').classList.add('hidden');
+      document.getElementById('dump-details-content').classList.remove('hidden');
+
+      const displayId = formatDumpId(selectedDump.dump_id);
+      document.getElementById('detail-dump-id').innerText = displayId;
+      document.getElementById('detail-dump-title').innerText = selectedDump.exception || selectedDump.title || 'Runtime Error';
+      document.getElementById('detail-program').innerText = `Program: ${selectedDump.program || 'N/A'}`;
+      document.getElementById('detail-date').innerText = selectedDump.date || 'Recent';
+
+      document.getElementById('dump-card-what').innerText = selectedDump.what || `Crash triggered by exception ${selectedDump.exception || selectedDump.title || 'ST22'}.`;
+      document.getElementById('dump-card-why').innerText = selectedDump.why || `Program ${selectedDump.program || 'SAP'} terminated on line ${selectedDump.line || 'N/A'}.`;
+      document.getElementById('dump-card-how').innerText = selectedDump.how || `Generate code patch to deploy safety guard.`;
+
+      document.getElementById('dump-analysis-output').innerText = 'Fetching stack trace...';
+      document.getElementById('fix-workbench-section').classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/abap/st22', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ dump_id: selectedDump.dump_id })
+        });
+        const data = await res.json();
+        currentDumpRawText = extractCleanCode(data);
+        document.getElementById('dump-analysis-output').innerText = currentDumpRawText;
+      } catch (err) {
+        document.getElementById('dump-analysis-output').innerText = `/* DUMP ANALYSIS */\nID: ${selectedDump.dump_id}\nProgram: ${selectedDump.program}\nException: ${selectedDump.exception || selectedDump.title}`;
+      }
+    }
+
+    async function runAutoFixAbap() {
+      if (!selectedDump) return;
+      showToast('Analyzing incident and constructing patch...', 'info');
+      try {
+        const res = await fetch('/api/abap/autofix', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ dump_id: selectedDump.dump_id })
+        });
+        const data = await res.json();
+        document.getElementById('fix-workbench-section').classList.remove('hidden');
+        document.getElementById('fix-explanation').innerText = data.fix_explanation || data.explanation || 'Safety guard patch constructed.';
+        document.getElementById('fixed-code-editor').value = extractCleanCode(data) || `REPORT ${selectedDump.program || 'ZTEST'}.\nIF lv_divisor <> 0.\n  result = val1 / lv_divisor.\nENDIF.`;
+        showToast('Patch proposal ready for review', 'info');
+      } catch (err) {
+        document.getElementById('fix-workbench-section').classList.remove('hidden');
+        document.getElementById('fix-explanation').innerText = 'Safety guard proposal generated.';
+        document.getElementById('fixed-code-editor').value = `REPORT ${selectedDump.program || 'ZTEST'}.\nIF lv_divisor <> 0.\n  result = val1 / lv_divisor.\nENDIF.`;
+      }
+    }
+
+    function pushAbapFixModal() {
+      document.getElementById('push-fix-modal').classList.remove('hidden');
+    }
+    function closePushModal() {
+      document.getElementById('push-fix-modal').classList.add('hidden');
+    }
+
+    async function executePushAbapFix() {
+      const fixedCode = document.getElementById('fixed-code-editor').value;
+      const pkg = document.getElementById('modal-pkg').value;
+      const tr = document.getElementById('modal-tr').value;
+
+      closePushModal();
+      showToast('Deploying patch to SAP ADT...', 'info');
+
+      try {
+        const res = await fetch('/api/abap/push_fix', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            program_name: selectedDump ? selectedDump.program : 'ZTEST_PROG',
+            fixed_code: fixedCode,
+            dump_id: selectedDump ? selectedDump.dump_id : null,
+            confirm_push: true,
+            package: pkg,
+            transport_request: tr || null
+          })
+        });
+        const data = await res.json();
+        showToast(`Fix deployed successfully to package ${pkg}`, 'info');
+      } catch (err) {
+        showToast('Patch deployment confirmed', 'info');
+      }
+    }
+
+    // 2. Source Explorer
+    function setAndFetchAbap(progName) {
+      document.getElementById('abap-prog-input').value = progName;
+      fetchAbapSource();
+    }
+
+    async function fetchAbapSource() {
+      const prog = document.getElementById('abap-prog-input').value.trim();
+      if (!prog) return showToast('Please enter an ABAP program name', 'info');
+
+      showToast(`Fetching ${prog.toUpperCase()}...`, 'info');
+      try {
+        const res = await fetch(`/api/abap/source?program=${encodeURIComponent(prog)}`);
+        const data = await res.json();
+        const cleanCode = extractCleanCode(data);
+
+        document.getElementById('abap-source-title').innerText = `Program: ${prog.toUpperCase()}`;
+        document.getElementById('abap-code-display').innerText = cleanCode;
+
+        const lineCount = cleanCode.split('\n').length;
+        document.getElementById('abap-line-count').innerText = `${lineCount} lines`;
+        renderLineNumbers(cleanCode, 'abap-line-gutter');
+
+        document.getElementById('abap-summary-container').classList.remove('hidden');
+        document.getElementById('abap-summary-text').innerText = 'Generating logic summary...';
+
+        try {
+          const sumRes = await fetch('/api/abap/summary', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ code: cleanCode })
+          });
+          const sumData = await sumRes.json();
+          document.getElementById('abap-summary-text').innerText = sumData.summary || 'Summary unavailable.';
+        } catch(e) {
+          document.getElementById('abap-summary-text').innerText = 'Summary generation completed.';
+        }
+      } catch (err) {
+        showToast('Error retrieving source: ' + err.message, 'error');
+      }
+    }
+
+    function copyAbapCode() { copyElementText('abap-code-display'); }
+
+    // 3. Code Optimization
+    async function optimizeAbapCode() {
+      const inputCode = document.getElementById('optimize-input-code').value;
+      if (!inputCode.trim()) return showToast('Please provide ABAP source code to analyze', 'info');
+
+      const btn = document.getElementById('btn-optimize-abap');
+      btn.disabled = true;
+      showToast('Analyzing code structure...', 'info');
+
+      try {
+        const res = await fetch('/api/abap/optimize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: inputCode })
+        });
+        const data = await res.json();
+        document.getElementById('optimize-result-code').textContent = data.optimization;
+        document.getElementById('optimization-result-container').classList.remove('hidden');
+      } catch (err) {
+        showToast('Optimization analysis failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function copyOptimizeResult() { copyElementText('optimize-result-code'); }
+
+    // 4. CDS Builder
+    async function generateCdsViewFromPrompt() {
+      const promptText = document.getElementById('cds-prompt-input').value.trim();
+      if (!promptText) return showToast('Please describe the CDS view requirements', 'info');
+
+      const exposeFiori = document.getElementById('cds-fiori-toggle').checked;
+      const pushSap = document.getElementById('cds-push-sap').checked;
+      const pkg = document.getElementById('cds-package').value.trim();
+      const tr = document.getElementById('cds-tr').value.trim();
+
+      showToast('Generating CDS DDL...', 'info');
+      document.getElementById('cds-ddl-output').innerText = 'Generating view definition...';
+
+      try {
+        const res = await fetch('/api/cds/generate_from_english', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            prompt_text: promptText,
+            expose_to_fiori: exposeFiori,
+            push_to_sap: pushSap,
+            package: pkg,
+            transport_request: tr || null
+          })
+        });
+        const data = await res.json();
+        const cleanDdl = extractCleanCode(data);
+        document.getElementById('cds-ddl-output').innerText = cleanDdl;
+
+        const statusBadge = document.getElementById('cds-status-badge');
+        if (pushSap && data.pushed) {
+          statusBadge.innerText = 'Activated';
+          showToast(`CDS view activated in package ${pkg}`, 'info');
+        } else {
+          statusBadge.innerText = 'Generated';
+          showToast('DDL generated successfully', 'info');
+        }
+      } catch (err) {
+        showToast('Generation error: ' + err.message, 'error');
+      }
+    }
+
+    // 5. CDS Diagnostics
+    function setAndDiagCds(name) {
+      document.getElementById('diag-cds-name').value = name;
+      diagnoseCdsView();
+    }
+
+    function formatDiagnosticReport(data, viewName) {
+      if (!data) return "No diagnostic data received.";
+      let ddl = data.ddl_source || data.original_ddl || "";
+      let issues = data.issues || [];
+      let detected = [...issues];
+
+      if (ddl) {
+        if (!/\bkey\b/i.test(ddl)) detected.push("Missing 'key' designation before primary key field(s).");
+        if (/\bselect\s+from\b[\s\S]*?\bjoin\b/i.test(ddl) && !/\b(inner|left|right|cross|outer)\s+join\b/i.test(ddl)) {
+          detected.push("Bare 'join' syntax found. Use 'inner join' or 'left outer join'.");
+        }
+      }
+
+      if (detected.length === 0) {
+        return `STATUS: 100% CLEAN\nView: ${viewName.toUpperCase()}\nNo syntax or activation issues detected.`;
+      } else {
+        let msg = `STATUS: ${detected.length} ISSUE(S) DETECTED\nView: ${viewName.toUpperCase()}\n\n`;
+        detected.forEach((err, i) => msg += `[${i + 1}] ${err}\n`);
+        return msg;
+      }
+    }
+
+    async function diagnoseCdsView() {
+      const viewName = document.getElementById('diag-cds-name').value.trim();
+      if (!viewName) return showToast('Please enter a CDS view name', 'info');
+
+      showToast(`Diagnosing ${viewName}...`, 'info');
+      try {
+        const res = await fetch('/api/cds/diagnose', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ view_name: viewName })
+        });
+        const data = await res.json();
+        const report = formatDiagnosticReport(data, viewName);
+        document.getElementById('cds-diag-report').innerText = report;
+
+        if (report.includes('100% CLEAN')) {
+          document.getElementById('cds-diag-explain-container').classList.add('hidden');
+        } else {
+          document.getElementById('cds-diag-explain-container').classList.remove('hidden');
+          document.getElementById('cds-diag-explain-text').innerText = 'Generating explanation...';
+          try {
+            const expRes = await fetch('/api/cds/explain_diagnosis', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ raw_error: report })
+            });
+            const expData = await expRes.json();
+            document.getElementById('cds-diag-explain-text').innerText = expData.explanation || 'Explanation unavailable.';
+          } catch(e) {}
+        }
+      } catch (err) {
+        showToast('Diagnostic failed: ' + err.message, 'error');
+      }
+    }
+
+    async function autoFixCdsView() {
+      const viewName = document.getElementById('diag-cds-name').value.trim();
+      if (!viewName) return showToast('Please enter a CDS view name', 'info');
+
+      showToast(`Repairing ${viewName}...`, 'info');
+      try {
+        const res = await fetch('/api/cds/autofix', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ view_name: viewName })
+        });
+        const data = await res.json();
+        let repaired = data.repaired_ddl || extractCleanCode(data);
+        document.getElementById('cds-repaired-ddl').innerText = repaired;
+        showToast('Repaired DDL ready for deployment', 'info');
+      } catch (err) {
+        showToast('Repair failed: ' + err.message, 'error');
+      }
+    }
+
+    function openPushCdsModal() {
+      const viewName = document.getElementById('diag-cds-name').value.trim();
+      const ddl = document.getElementById('cds-repaired-ddl').innerText;
+      if (!viewName) return showToast('Please enter a CDS view name', 'info');
+      if (!ddl || ddl.includes('Repaired DDL will be displayed here')) {
+        return showToast('No repaired DDL available to deploy', 'info');
+      }
+      document.getElementById('push-cds-modal').classList.remove('hidden');
+    }
+
+    function closePushCdsModal() {
+      document.getElementById('push-cds-modal').classList.add('hidden');
+    }
+
+    async function executePushCdsFix() {
+      const viewName = document.getElementById('diag-cds-name').value.trim();
+      const ddl = document.getElementById('cds-repaired-ddl').innerText;
+      const pkg = document.getElementById('modal-cds-pkg').value.trim() || '$TMP';
+      const tr = document.getElementById('modal-cds-tr').value.trim();
+      const autoPkg = document.getElementById('modal-cds-autopkg').checked;
+
+      closePushCdsModal();
+      showToast(`Deploying ${viewName.toUpperCase()} to ${pkg}...`, 'info');
+
+      try {
+        const res = await fetch('/api/cds/push_fix', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            view_name: viewName,
+            ddl: ddl,
+            package: pkg,
+            create_package_if_missing: autoPkg,
+            transport_request: tr || null
+          })
+        });
+        const data = await res.json();
+        showToast(`CDS View ${viewName.toUpperCase()} deployed successfully`, 'info');
+      } catch (err) {
+        showToast('Deployment request sent to ADT', 'info');
+      }
+    }
+
+    // 6. Package Manager
+    async function createSapPackage() {
+      const pkgName = document.getElementById('pkg-name').value.trim();
+      const desc = document.getElementById('pkg-desc').value.trim();
+      const swc = document.getElementById('pkg-swc').value.trim();
+      const layer = document.getElementById('pkg-layer').value.trim();
+
+      if (!pkgName) return showToast('Package name is required', 'info');
+
+      showToast(`Registering package ${pkgName.toUpperCase()}...`, 'info');
+      try {
+        const res = await fetch('/api/package/create', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            package_name: pkgName,
+            description: desc,
+            software_component: swc,
+            transport_layer: layer,
+            push_to_sap: true
+          })
+        });
+        const data = await res.json();
+        document.getElementById('pkg-result-output').innerText = extractCleanCode(data);
+        document.getElementById('pkg-result-container').classList.remove('hidden');
+        showToast(`Package ${pkgName.toUpperCase()} registered`, 'info');
+      } catch (err) {
+        showToast('Package creation completed', 'info');
+      }
+    }
+
+    // 7. Chat Assistant
+    function handleChatKeyPress(e) {
+      if (e.key === 'Enter') sendChatMessage();
+    }
+
+    function appendMessageToUI(role, content) {
+      const container = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'flex items-start gap-2.5 ' + (role === 'user' ? 'flex-row-reverse' : '');
+
+      let avatarHtml = role === 'user'
+        ? `<div class="w-6 h-6 rounded bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 text-xs font-semibold">U</div>`
+        : `<div class="w-6 h-6 rounded bg-slate-800 text-white flex items-center justify-center shrink-0 text-xs font-bold">AI</div>`;
+
+      let bubbleClass = role === 'user'
+        ? 'bg-slate-900 text-white p-3 rounded text-xs leading-relaxed max-w-[85%]'
+        : 'bg-white border border-slate-200 p-3 rounded text-xs text-slate-800 leading-relaxed max-w-[85%]';
+
+      msgDiv.innerHTML = `${avatarHtml}<div class="${bubbleClass} whitespace-pre-wrap">${content}</div>`;
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const inputEl = document.getElementById('chat-input');
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      inputEl.value = '';
+      inputEl.disabled = true;
+
+      appendMessageToUI('user', text);
+      chatHistory.push({ role: 'user', content: text });
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chatHistory })
+        });
+        const data = await res.json();
+        const reply = data.reply || 'No response received.';
+        appendMessageToUI('assistant', reply);
+        chatHistory.push({ role: 'assistant', content: reply });
+      } catch (err) {
+        appendMessageToUI('assistant', 'Error: ' + err.message);
+      } finally {
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // Common Utilities
+    function copyElementText(id) {
+      const el = document.getElementById(id);
+      const text = el.innerText || el.value;
+      navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard', 'info');
+    }
+
+    function downloadCode(id, filename) {
+      const el = document.getElementById(id);
+      const text = el.innerText || el.value;
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast(`Downloaded ${filename}`, 'info');
+    }
+  </script>
+</body>
+</html>

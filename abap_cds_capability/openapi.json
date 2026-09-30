@@ -1,0 +1,439 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ABAP & CDS AI Debug Agent API",
+    "description": "REST API Endpoints for SAP ABAP code retrieval, ST22 crash dump debugging, CDS view generation, SAP package creation & auto-fix.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/abap/source": {
+      "get": {
+        "summary": "Fetch ABAP Source Code",
+        "operationId": "fetch_abap_source",
+        "parameters": [
+          {
+            "name": "program",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ABAP Program Name e.g. Z0SAP_12"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/api/abap/dumps": {
+      "get": {
+        "summary": "List Recent ST22 Short Dumps",
+        "operationId": "list_recent_dumps",
+        "parameters": [
+          {
+            "name": "max_results",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Max number of recent dumps to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of recent dumps with real dump_id values"
+          }
+        }
+      }
+    },
+    "/api/abap/st22": {
+      "post": {
+        "summary": "Analyze ST22 Short Dump",
+        "operationId": "analyze_st22_dump",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dump_id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["dump_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dump analysis result"
+          }
+        }
+      }
+    },
+    "/api/abap/autofix": {
+      "post": {
+        "summary": "Auto Fix ABAP Dump (Generate Proposal)",
+        "operationId": "auto_fix_abap",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dump_id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["dump_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Auto fix proposal result for user review"
+          }
+        }
+      }
+    },
+    "/api/abap/push_fix": {
+      "post": {
+        "summary": "Push ABAP Fix Live to SAP System (User Controller Approved)",
+        "operationId": "push_abap_fix",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "program_name": { "type": "string", "description": "Target ABAP Program Name e.g. Z0SAP_12" },
+                  "fixed_code": { "type": "string", "description": "Full updated ABAP source code to deploy" },
+                  "dump_id": { "type": "string", "nullable": true, "description": "Associated ST22 dump ID" },
+                  "confirm_push": { "type": "boolean", "default": false, "description": "User approval controller flag. Must be set to true by user to deploy live." },
+                  "package": { "type": "string", "default": "$TMP" },
+                  "transport_request": { "type": "string", "nullable": true, "description": "Transport request if package is not $TMP" }
+                },
+                "required": ["program_name", "fixed_code", "confirm_push"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Push and activation status result"
+          }
+        }
+      }
+    },
+    "/api/package/create": {
+      "post": {
+        "summary": "Create SAP Development Package (DevClass)",
+        "operationId": "create_sap_package",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "package_name": { "type": "string", "description": "SAP Package name e.g. ZDEV_PACKAGE or $TMP" },
+                  "description": { "type": "string", "nullable": true, "description": "Package description" },
+                  "software_component": { "type": "string", "default": "HOME" },
+                  "transport_layer": { "type": "string", "default": "SAP" },
+                  "super_package": { "type": "string", "nullable": true },
+                  "transport_request": { "type": "string", "nullable": true },
+                  "push_to_sap": { "type": "boolean", "default": true }
+                },
+                "required": ["package_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Package creation status result"
+          }
+        }
+      }
+    },
+    "/api/cds/create": {
+      "post": {
+        "summary": "Create CDS View Generator (Single & Multi-Table)",
+        "operationId": "create_cds_view",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "view_name": { "type": "string", "description": "CDS View Name e.g. Z_I_CustomView" },
+                  "table_name": { "type": "string", "description": "Primary DB table name e.g. vbak" },
+                  "fields": { "type": "array", "items": { "type": "string" }, "description": "List of projection fields" },
+                  "joins": {
+                    "type": "array",
+                    "description": "Optional list of joined tables",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "table": { "type": "string" },
+                        "alias": { "type": "string" },
+                        "join_type": { "type": "string", "default": "left outer join" },
+                        "on": { "type": "string", "description": "Join condition e.g. Header.vbeln = Item.vbeln" }
+                      },
+                      "required": ["table", "on"]
+                    }
+                  },
+                  "associations": {
+                    "type": "array",
+                    "description": "Optional list of CDS associations",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "target": { "type": "string" },
+                        "alias": { "type": "string" },
+                        "cardinality": { "type": "string", "default": "[0..*]" },
+                        "on": { "type": "string" }
+                      },
+                      "required": ["target", "on"]
+                    }
+                  },
+                  "sql_view_name": { "type": "string", "nullable": true, "description": "Custom SQL view name (max 16 chars). Auto-generated if omitted." },
+                  "expose_to_fiori": { "type": "boolean", "default": true },
+                  "push_to_sap": { "type": "boolean", "default": false, "description": "If true, also create and activate the view live in SAP." },
+                  "package": { "type": "string", "default": "$TMP", "description": "Target SAP package name selected by user" },
+                  "create_package_if_missing": { "type": "boolean", "default": false, "description": "If true, creates the package in SAP if it does not exist." },
+                  "transport_request": { "type": "string", "nullable": true, "description": "Required if package is not a local ($TMP) package." }
+                },
+                "required": ["view_name", "table_name", "fields"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated CDS DDL result"
+          }
+        }
+      }
+    },
+    "/api/cds/diagnose": {
+      "post": {
+        "summary": "Diagnose CDS View Activation Issue",
+        "operationId": "diagnose_cds_issue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "view_name": { "type": "string" }
+                },
+                "required": ["view_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Diagnosis result"
+          }
+        }
+      }
+    },
+    "/api/cds/autofix": {
+      "post": {
+        "summary": "Auto Fix CDS View Activation Error",
+        "operationId": "auto_fix_cds_view",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "view_name": { "type": "string" }
+                },
+                "required": ["view_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repaired CDS DDL result"
+          }
+        }
+      }
+    },
+    "/api/cds/push_fix": {
+      "post": {
+        "summary": "Push Repaired CDS View Live to SAP System",
+        "operationId": "push_cds_fix",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "view_name": { "type": "string" },
+                  "ddl": { "type": "string" },
+                  "package": { "type": "string", "default": "$TMP" },
+                  "transport_request": { "type": "string", "nullable": true }
+                },
+                "required": ["view_name", "ddl"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CDS Push Fix result"
+          }
+        }
+      }
+    },
+    "/api/abap/summary": {
+      "post": {
+        "summary": "Summarize ABAP Program Logic",
+        "operationId": "summarize_abap_logic",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": { "type": "string", "description": "ABAP Source Code" }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Summary result"
+          }
+        }
+      }
+    },
+    "/api/abap/optimize": {
+      "post": {
+        "summary": "Optimize ABAP Code with Modern Syntax",
+        "operationId": "optimize_abap_code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": { "type": "string", "description": "ABAP Source Code" }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Optimization recommendations"
+          }
+        }
+      }
+    },
+    "/api/cds/explain_diagnosis": {
+      "post": {
+        "summary": "Explain CDS Activation Failure in Plain English",
+        "operationId": "explain_cds_diagnosis",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "raw_error": { "type": "string", "description": "Raw SAP CDS error or diagnostic message" }
+                },
+                "required": ["raw_error"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plain English explanation and fix guidance"
+          }
+        }
+      }
+    },
+    "/api/cds/generate_from_english": {
+      "post": {
+        "summary": "Generate CDS View from Natural Language Description",
+        "operationId": "generate_cds_from_english",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt_text": { "type": "string", "description": "Plain English description of the CDS View" },
+                  "package": { "type": "string", "default": "$TMP" },
+                  "transport_request": { "type": "string", "nullable": true },
+                  "expose_to_fiori": { "type": "boolean", "default": true },
+                  "push_to_sap": { "type": "boolean", "default": false }
+                },
+                "required": ["prompt_text"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated or deployed CDS View result"
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "summary": "Chat with SAP AI Assistant",
+        "operationId": "chat_ai",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": { "type": "object" },
+                    "description": "Chat message history"
+                  }
+                },
+                "required": ["messages"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assistant reply"
+          }
+        }
+      }
+    }
+  }
+}

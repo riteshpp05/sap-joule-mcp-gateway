@@ -1,0 +1,23 @@
+[
+  {
+    "trkorr": "DEVK900123",
+    "as4text": "Sprint 42: S/4HANA Sales & Finance Core Extensions",
+    "trstatus": "D",
+    "as4user": "DEVELOPER",
+    "target": "QAS"
+  },
+  {
+    "trkorr": "DEVK900001",
+    "as4text": "Initial S/4HANA Joule AI Agent Setup",
+    "trstatus": "D",
+    "as4user": "DEVELOPER",
+    "target": "QAS"
+  },
+  {
+    "trkorr": "S4HK901234",
+    "as4text": "Release 2026.1 Enterprise Enhancements",
+    "trstatus": "D",
+    "as4user": "ARCHITECT",
+    "target": "PRD"
+  }
+]

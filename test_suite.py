@@ -345,14 +345,174 @@ def test_ai_intelligence_endpoints():
     print("[TEST PASS] All AI intelligence endpoints verified successfully!")
 
 
+def test_cds_view_entity_modernization():
+    """Verify modern CDS View Entity generation vs Classic CDS Views."""
+    # Test 1: Modern View Entity (default)
+    res_entity = asyncio.run(
+        abap_client.create_cds_view(
+            view_name="Z_I_EntityTest",
+            table_name="vbak",
+            fields=["key vbeln as SalesOrder", "erdat as CreationDate"],
+            view_type="entity",
+            push_to_sap=False,
+        )
+    )
+    assert res_entity["view_type"] == "entity"
+    assert res_entity["sql_view_name"] is None
+    assert "define view entity Z_I_EntityTest" in res_entity["ddl"]
+    assert "@AbapCatalog.sqlViewName" not in res_entity["ddl"]
+
+    # Test 2: Classic CDS View (backward compatibility)
+    res_classic = asyncio.run(
+        abap_client.create_cds_view(
+            view_name="Z_I_ClassicTest",
+            table_name="vbak",
+            fields=["key vbeln as SalesOrder"],
+            view_type="classic",
+            push_to_sap=False,
+        )
+    )
+    assert res_classic["view_type"] == "classic"
+    assert res_classic["sql_view_name"] is not None
+    assert "define view Z_I_ClassicTest" in res_classic["ddl"]
+    assert "@AbapCatalog.sqlViewName:" in res_classic["ddl"]
+    print("[TEST PASS] CDS View Entity & Classic DDL modernization verified!")
+
+
+def test_transport_request_governance():
+    """Verify CTS Transport Request validation rules."""
+    # 1. Local package ($TMP) does not require TR
+    v1 = abap_client.validate_transport_request(None, package="$TMP")
+    assert v1["valid"] is True
+    assert v1["is_local"] is True
+
+    # 2. Non-local package without TR is rejected
+    v2 = abap_client.validate_transport_request(None, package="ZDEV_PACKAGE")
+    assert v2["valid"] is False
+    assert "mandates an active Transport Request" in v2["message"]
+
+    # 3. Invalid TR format is rejected
+    v3 = abap_client.validate_transport_request("BAD_TR_FORMAT", package="ZDEV_PACKAGE")
+    assert v3["valid"] is False
+    assert "Invalid Transport Request format" in v3["message"]
+
+    # 4. Valid TR format is accepted
+    v4 = abap_client.validate_transport_request("DEVK900123", package="ZDEV_PACKAGE")
+    assert v4["valid"] is True
+    assert v4["transport_request"] == "DEVK900123"
+
+    print("[TEST PASS] Enterprise CTS Transport Request Governance verified!")
+
+
+def test_automated_rollback_on_activation_failure():
+    """Verify atomic automated rollback if activation fails."""
+    res = asyncio.run(
+        abap_client.push_abap_fix(
+            program_name="ZTEST_CALCULATOR",
+            fixed_code="REPORT ztest.\nWRITE 'Invalid Syntax'.",
+            confirm_push=True,
+            simulate_activation_failure=True,
+        )
+    )
+    assert res["status"] == "ROLLED_BACK"
+    assert res["rollback_performed"] is True
+    assert res["activated"] is False
+    assert "Automated rollback executed" in res["message"]
+    print("[TEST PASS] Automated Rollback on activation failure verified!")
+
+
+def test_lock_conflict_handling():
+    """Verify concurrency conflict detection with user attribution."""
+    res = asyncio.run(
+        abap_client.push_abap_fix(
+            program_name="Z_LOCKED_PROGRAM",
+            fixed_code="REPORT z_locked.\nWRITE 1.",
+            confirm_push=True,
+        )
+    )
+    assert res["status"] == "LOCK_CONFLICT"
+    assert res["lock_conflict"] is True
+    assert res["locked_by"] == "BASIS_ADMIN"
+    assert "locked by SAP user" in res["message"]
+    print("[TEST PASS] Concurrency Lock Conflict handling verified!")
+
+
+def test_abap_unit_regression_gate():
+    """Verify ABAP Unit automated regression testing and rollback triggers."""
+    # 1. Normal run with passing tests
+    u_pass = asyncio.run(abap_client.run_abap_unit_tests("ZTEST_CALCULATOR"))
+    assert u_pass["status"] == "SUCCESS"
+    assert u_pass["passed"] > 0
+    assert u_pass["failed"] == 0
+
+    # 2. Regression detected and rollback triggered
+    u_fail = asyncio.run(
+        abap_client.push_abap_fix(
+            program_name="Z_FAIL_CALCULATOR",
+            fixed_code="REPORT z_fail.\nWRITE 1.",
+            confirm_push=True,
+            run_unit_tests=True,
+            auto_rollback_on_test_failure=True,
+        )
+    )
+    assert u_fail["status"] == "ROLLED_BACK_ON_TEST_FAILURE"
+    assert u_fail["rollback_performed"] is True
+    assert "regression detected" in u_fail["message"].lower()
+    print("[TEST PASS] ABAP Unit Regression Gate and Rollback verified!")
+
+
+def test_observability_metrics_and_health_probes():
+    """Verify Prometheus metrics endpoint, liveness/readiness probes, and correlation headers."""
+    client = TestClient(app)
+
+    # 1. Liveness probe
+    r_live = client.get("/health/live")
+    assert r_live.status_code == 200
+    assert r_live.json()["status"] == "ALIVE"
+
+    # 2. Readiness probe
+    r_ready = client.get("/health/ready")
+    assert r_ready.status_code == 200
+    assert r_ready.json()["status"] == "READY"
+
+    # 3. Correlation ID header propagation
+    test_corr_id = "test-corr-uuid-9988"
+    r_corr = client.get("/health", headers={"X-Correlation-ID": test_corr_id})
+    assert r_corr.headers.get("X-Correlation-ID") == test_corr_id
+    assert "X-Response-Time" in r_corr.headers
+
+    # 4. Prometheus metrics endpoint
+    r_metrics = client.get("/metrics")
+    assert r_metrics.status_code == 200
+    assert "gateway_requests_total" in r_metrics.text
+    assert "sap_rollbacks_total" in r_metrics.text
+
+    # 5. CTS validation endpoint
+    r_cts = client.post("/api/cts/validate", json={"package": "$TMP"})
+    assert r_cts.status_code == 200
+    assert r_cts.json()["valid"] is True
+
+    # 6. Unit tests endpoint
+    r_u = client.post("/api/abap/unit_tests", json={"program_name": "ZTEST_CALC"})
+    assert r_u.status_code == 200
+    assert r_u.json()["status"] == "SUCCESS"
+
+    print("[TEST PASS] Observability, Metrics, and Health Probes verified!")
+
+
 if __name__ == "__main__":
     print("\n==========================================================")
-    print("   RUNNING ABAP & CDS AGENT AUTOMATED SUITE")
+    print("   RUNNING ABAP & CDS AGENT AUTOMATED PRODUCTION SUITE")
     print("==========================================================\n")
     test_cds_single_table_ddl()
     test_cds_multi_table_ddl()
+    test_cds_view_entity_modernization()
     test_st22_autofix_proposal()
     test_user_controlled_push_abap_fix()
+    test_transport_request_governance()
+    test_automated_rollback_on_activation_failure()
+    test_lock_conflict_handling()
+    test_abap_unit_regression_gate()
     test_create_sap_package()
     test_fastapi_rest_endpoints()
     test_deploy_joule_validator()
@@ -361,6 +521,7 @@ if __name__ == "__main__":
     test_mcp_connection_and_lifespan()
     test_mock_mode_end_to_end()
     test_ai_intelligence_endpoints()
+    test_observability_metrics_and_health_probes()
     print("\n==========================================================")
-    print("  ALL 12 TEST CASES PASSED SUCCESSFULLY (100% SUCCESS)!")
+    print("  ALL 18 TEST CASES PASSED SUCCESSFULLY (100% SUCCESS)!")
     print("==========================================================\n")

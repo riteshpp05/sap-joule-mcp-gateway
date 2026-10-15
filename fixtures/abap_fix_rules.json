@@ -1,0 +1,54 @@
+{
+  "rules": {
+    "COMPUTE_INT_ZERODIVIDE": {
+      "exception": "CX_SY_ZERODIVIDE",
+      "code_template": "IF divisor <> 0.\n  result = numerator / divisor.\nELSE.\n  \" handle zero-divisor case safely\n  result = 0.\nENDIF.",
+      "explanation": "Division by zero detected (CX_SY_ZERODIVIDE). Added defensive conditional guard around the divisor before division operation."
+    },
+    "CX_SY_ZERODIVIDE": {
+      "exception": "CX_SY_ZERODIVIDE",
+      "code_template": "IF divisor <> 0.\n  result = numerator / divisor.\nELSE.\n  \" handle zero-divisor case safely\n  result = 0.\nENDIF.",
+      "explanation": "Division by zero detected (CX_SY_ZERODIVIDE). Added defensive conditional guard around the divisor before division operation."
+    },
+    "OBJECTS_OBJREF_NOT_ASSIGNED": {
+      "exception": "CX_SY_REF_IS_INITIAL",
+      "code_template": "IF lo_ref IS BOUND.\n  lo_ref->execute( ).\nELSE.\n  MESSAGE 'Object instance not bound' TYPE 'W'.\nENDIF.",
+      "explanation": "Dereferencing an unbound reference variable (CX_SY_REF_IS_INITIAL). Added 'IS BOUND' defensive guard check before invocation."
+    },
+    "CX_SY_REF_IS_INITIAL": {
+      "exception": "CX_SY_REF_IS_INITIAL",
+      "code_template": "IF lo_ref IS BOUND.\n  lo_ref->execute( ).\nELSE.\n  MESSAGE 'Object instance not bound' TYPE 'W'.\nENDIF.",
+      "explanation": "Dereferencing an unbound reference variable (CX_SY_REF_IS_INITIAL). Added 'IS BOUND' defensive guard check before invocation."
+    },
+    "ITAB_LINE_NOT_FOUND": {
+      "exception": "CX_SY_ITAB_LINE_NOT_FOUND",
+      "code_template": "READ TABLE lt_table INTO ls_line WITH KEY key = lv_key.\nIF sy-subrc <> 0.\n  \" handle record not found condition gracefully\nENDIF.",
+      "explanation": "Internal table key lookup failed without checking sy-subrc. Added explicit sy-subrc check."
+    },
+    "CX_SY_ITAB_LINE_NOT_FOUND": {
+      "exception": "CX_SY_ITAB_LINE_NOT_FOUND",
+      "code_template": "READ TABLE lt_table INTO ls_line WITH KEY key = lv_key.\nIF sy-subrc <> 0.\n  \" handle record not found condition gracefully\nENDIF.",
+      "explanation": "Internal table key lookup failed without checking sy-subrc. Added explicit sy-subrc check."
+    },
+    "CONVT_NO_NUMBER": {
+      "exception": "CX_SY_CONVERSION_NO_NUMBER",
+      "code_template": "IF lv_string CO '0123456789'.\n  lv_number = lv_string.\nELSE.\n  \" handle non-numeric input gracefully\nENDIF.",
+      "explanation": "Type conversion error: string contained non-numeric characters. Added defensive CO validation before conversion."
+    },
+    "CX_SY_CONVERSION_NO_NUMBER": {
+      "exception": "CX_SY_CONVERSION_NO_NUMBER",
+      "code_template": "IF lv_string CO '0123456789'.\n  lv_number = lv_string.\nELSE.\n  \" handle non-numeric input gracefully\nENDIF.",
+      "explanation": "Type conversion error: string contained non-numeric characters. Added defensive CO validation before conversion."
+    },
+    "DBIF_RSQL_SQL_ERROR": {
+      "exception": "DBIF_RSQL_SQL_ERROR",
+      "code_template": "TRY.\n    \" guarded Open SQL statement\n  CATCH cx_sy_open_sql_db INTO DATA(lx_sql).\n    MESSAGE lx_sql->get_text( ) TYPE 'E'.\nENDTRY.",
+      "explanation": "Database interface SQL error at runtime (DBIF_RSQL_SQL_ERROR). Enclosed Open SQL statement inside TRY/CATCH cx_sy_open_sql_db block."
+    }
+  },
+  "default_rule": {
+    "exception": "CX_ROOT",
+    "code_template": "TRY.\n    \" guarded logic block\n  CATCH cx_root INTO DATA(lx_root).\n    MESSAGE lx_root->get_text( ) TYPE 'E'.\nENDTRY.",
+    "explanation": "Generic exception safety envelope synthesized using CX_ROOT TRY/CATCH block."
+  }
+}

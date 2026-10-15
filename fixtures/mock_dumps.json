@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DUMP_MOCK_001",
+    "dump_id": "DUMP_MOCK_001",
+    "title": "COMPUTE_INT_ZERODIVIDE",
+    "description": "Runtime Error: CX_SY_ZERODIVIDE in ZTEST_CALCULATOR",
+    "date": "Today 13:45",
+    "time": "13:45",
+    "program": "ZTEST_CALCULATOR",
+    "user": "DEVELOPER",
+    "error": "COMPUTE_INT_ZERODIVIDE",
+    "exception": "CX_SY_ZERODIVIDE"
+  },
+  {
+    "id": "DUMP_MOCK_002",
+    "dump_id": "DUMP_MOCK_002",
+    "title": "CONVT_NO_NUMBER",
+    "description": "Runtime Error: CX_SY_CONVERSION_NO_NUMBER in ZCDS_BOM_COMP",
+    "date": "Today 12:10",
+    "time": "12:10",
+    "program": "ZCDS_BOM_COMP",
+    "user": "DEVELOPER",
+    "error": "CONVT_NO_NUMBER",
+    "exception": "CX_SY_CONVERSION_NO_NUMBER"
+  },
+  {
+    "id": "DUMP_MOCK_003",
+    "dump_id": "DUMP_MOCK_003",
+    "title": "OBJECTS_OBJREF_NOT_ASSIGNED",
+    "description": "Runtime Error: CX_SY_REF_IS_INITIAL in ZSALES_ORDER_HANDLER",
+    "date": "Today 11:30",
+    "time": "11:30",
+    "program": "ZSALES_ORDER_HANDLER",
+    "user": "DEVELOPER",
+    "error": "OBJECTS_OBJREF_NOT_ASSIGNED",
+    "exception": "CX_SY_REF_IS_INITIAL"
+  },
+  {
+    "id": "DUMP_MOCK_004",
+    "dump_id": "DUMP_MOCK_004",
+    "title": "ITAB_LINE_NOT_FOUND",
+    "description": "Runtime Error: CX_SY_ITAB_LINE_NOT_FOUND in ZINVOICE_PROCESSOR",
+    "date": "Today 10:15",
+    "time": "10:15",
+    "program": "ZINVOICE_PROCESSOR",
+    "user": "DEVELOPER",
+    "error": "ITAB_LINE_NOT_FOUND",
+    "exception": "CX_SY_ITAB_LINE_NOT_FOUND"
+  },
+  {
+    "id": "DUMP_MOCK_005",
+    "dump_id": "DUMP_MOCK_005",
+    "title": "DBIF_RSQL_SQL_ERROR",
+    "description": "Runtime Error: DBIF_RSQL_SQL_ERROR in ZREPORT_FINANCIALS",
+    "date": "Today 09:30",
+    "time": "09:30",
+    "program": "ZREPORT_FINANCIALS",
+    "user": "DEVELOPER",
+    "error": "DBIF_RSQL_SQL_ERROR",
+    "exception": "DBIF_RSQL_SQL_ERROR"
+  }
+]

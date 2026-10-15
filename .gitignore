@@ -45,3 +45,11 @@ Thumbs.db
 abap_cds_agent.zip
 *.log
 scratch/
+
+# Node.js / Frontend dependencies
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+

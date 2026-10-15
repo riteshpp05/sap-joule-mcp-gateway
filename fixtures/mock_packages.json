@@ -1,0 +1,30 @@
+[
+  {
+    "name": "$TMP",
+    "description": "Local Private Development Objects",
+    "is_local": true,
+    "software_component": "LOCAL",
+    "transport_layer": ""
+  },
+  {
+    "name": "ZDEV_CORE",
+    "description": "Core S/4HANA Custom Development",
+    "is_local": false,
+    "software_component": "HOME",
+    "transport_layer": "SAP"
+  },
+  {
+    "name": "Z_INVENTORY_CORE",
+    "description": "Logistics & Materials Custom Package",
+    "is_local": false,
+    "software_component": "HOME",
+    "transport_layer": "SAP"
+  },
+  {
+    "name": "Z_FIN_GL",
+    "description": "Finance General Ledger S/4 Package",
+    "is_local": false,
+    "software_component": "HOME",
+    "transport_layer": "SAP"
+  }
+]

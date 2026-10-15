@@ -1,0 +1,55 @@
+{
+  "vbak": {
+    "name": "vbak",
+    "description": "Sales Document: Header Data",
+    "fields": [
+      {"name": "vbeln", "description": "Sales Document", "type": "CHAR", "length": 10, "is_key": true},
+      {"name": "erdat", "description": "Creation Date", "type": "DATS", "length": 8, "is_key": false},
+      {"name": "kunnr", "description": "Sold-to Party", "type": "CHAR", "length": 10, "is_key": false},
+      {"name": "netwr", "description": "Net Value of Order", "type": "CURR", "length": 15, "is_key": false},
+      {"name": "waerk", "description": "SD Document Currency", "type": "CUKY", "length": 5, "is_key": false}
+    ]
+  },
+  "vbap": {
+    "name": "vbap",
+    "description": "Sales Document: Item Data",
+    "fields": [
+      {"name": "vbeln", "description": "Sales Document", "type": "CHAR", "length": 10, "is_key": true},
+      {"name": "posnr", "description": "Sales Document Item", "type": "NUMC", "length": 6, "is_key": true},
+      {"name": "matnr", "description": "Material Number", "type": "CHAR", "length": 40, "is_key": false},
+      {"name": "kwmeng", "description": "Cumulative Order Quantity", "type": "QUAN", "length": 15, "is_key": false},
+      {"name": "netwr", "description": "Net Value of Item", "type": "CURR", "length": 15, "is_key": false}
+    ]
+  },
+  "kna1": {
+    "name": "kna1",
+    "description": "General Data in Customer Master",
+    "fields": [
+      {"name": "kunnr", "description": "Customer Number", "type": "CHAR", "length": 10, "is_key": true},
+      {"name": "name1", "description": "Name 1", "type": "CHAR", "length": 35, "is_key": false},
+      {"name": "land1", "description": "Country Key", "type": "CHAR", "length": 3, "is_key": false},
+      {"name": "ort01", "description": "City", "type": "CHAR", "length": 35, "is_key": false}
+    ]
+  },
+  "mara": {
+    "name": "mara",
+    "description": "General Material Data",
+    "fields": [
+      {"name": "matnr", "description": "Material Number", "type": "CHAR", "length": 40, "is_key": true},
+      {"name": "ersda", "description": "Created On", "type": "DATS", "length": 8, "is_key": false},
+      {"name": "mtart", "description": "Material Type", "type": "CHAR", "length": 4, "is_key": false},
+      {"name": "matkl", "description": "Material Group", "type": "CHAR", "length": 9, "is_key": false}
+    ]
+  },
+  "bseg": {
+    "name": "bseg",
+    "description": "Accounting Document Segment",
+    "fields": [
+      {"name": "bukrs", "description": "Company Code", "type": "CHAR", "length": 4, "is_key": true},
+      {"name": "belnr", "description": "Accounting Document Number", "type": "CHAR", "length": 10, "is_key": true},
+      {"name": "gjahr", "description": "Fiscal Year", "type": "NUMC", "length": 4, "is_key": true},
+      {"name": "buzei", "description": "Number of Line Item", "type": "NUMC", "length": 3, "is_key": true},
+      {"name": "dmbtr", "description": "Amount in Local Currency", "type": "CURR", "length": 13, "is_key": false}
+    ]
+  }
+}

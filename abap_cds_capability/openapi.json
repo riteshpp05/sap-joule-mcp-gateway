@@ -118,7 +118,9 @@
                   "dump_id": { "type": "string", "nullable": true, "description": "Associated ST22 dump ID" },
                   "confirm_push": { "type": "boolean", "default": false, "description": "User approval controller flag. Must be set to true by user to deploy live." },
                   "package": { "type": "string", "default": "$TMP" },
-                  "transport_request": { "type": "string", "nullable": true, "description": "Transport request if package is not $TMP" }
+                  "transport_request": { "type": "string", "nullable": true, "description": "Transport request if package is not $TMP" },
+                  "run_unit_tests": { "type": "boolean", "default": true, "description": "Run ABAP Unit tests after activation" },
+                  "auto_rollback_on_test_failure": { "type": "boolean", "default": true, "description": "Automatically rollback source if unit tests fail" }
                 },
                 "required": ["program_name", "fixed_code", "confirm_push"]
               }
@@ -128,6 +130,56 @@
         "responses": {
           "200": {
             "description": "Push and activation status result"
+          }
+        }
+      }
+    },
+    "/api/abap/unit_tests": {
+      "post": {
+        "summary": "Run ABAP Unit Regression Tests",
+        "operationId": "run_abap_unit_tests",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "program_name": { "type": "string", "description": "Target ABAP program name" }
+                },
+                "required": ["program_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ABAP Unit test results summary"
+          }
+        }
+      }
+    },
+    "/api/cts/validate": {
+      "post": {
+        "summary": "Validate Transport Request Compliance",
+        "operationId": "validate_transport_request",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transport_request": { "type": "string", "nullable": true, "description": "SAP Transport Request ID" },
+                  "package": { "type": "string", "default": "$TMP", "description": "Target SAP package" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation compliance result"
           }
         }
       }
@@ -206,6 +258,7 @@
                     }
                   },
                   "sql_view_name": { "type": "string", "nullable": true, "description": "Custom SQL view name (max 16 chars). Auto-generated if omitted." },
+                  "view_type": { "type": "string", "default": "entity", "description": "Type of CDS view: 'entity' (modern S/4HANA View Entity) or 'classic' (legacy define view)." },
                   "expose_to_fiori": { "type": "boolean", "default": true },
                   "push_to_sap": { "type": "boolean", "default": false, "description": "If true, also create and activate the view live in SAP." },
                   "package": { "type": "string", "default": "$TMP", "description": "Target SAP package name selected by user" },
